@@ -20,7 +20,14 @@ object app {
 
   implicit def double2Complex(d : Double) = Complex(d, 0.0)
 
-  def drawMandel(width : Int, height : Int) = {
+  val colourists : (String) => (Complex) => Int = {
+    case "escapeBW" => escapeBW _
+    case _ => throw new IllegalArgumentException("no such colourist")
+  }
+
+  def escapeBW(z : Complex) = if (z.mag >= 2.0) 0xffffff else 0x000000
+
+  def drawMandel(width : Int, height : Int, colourist : (Complex) => Int) = {
     val image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB)
 
     // translate the complex plane and scale it to the image dimensions
@@ -45,8 +52,8 @@ object app {
 
     for (y <- Iterator.range(0, height); x <- Iterator.range(0, width)) {
       val c = Complex((x + xoff) * scale, (y + yoff) * scale)
-      val escaped = mandel(c, bailout, 5000).mag >= bailout
-      image.setRGB(x, y, if (escaped) 0xffffff else 0x000000)
+      val escape = mandel(c, bailout, 5000)
+      image.setRGB(x, y, colourist(escape))
     }
 
     image
@@ -59,8 +66,8 @@ object app {
   }
 
   def main(args : Array[String]) : Unit = {
-    val image = drawMandel(args(0).toInt, args(1).toInt)
-    val output = new File(args(2))
+    val image = drawMandel(args(0).toInt, args(1).toInt, colourists(args(2)))
+    val output = new File(args(3))
 
     val suffix = output.getName.replaceFirst(".*\\.", "")
     val writer = imageWriter(suffix)
