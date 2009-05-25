@@ -13,6 +13,7 @@ case class Complex(re : Double, im : Double) {
               re * other.im + im * other.re)
   def sq() = *(this)
   def sqmag() = re * re + im * im
+  def mag() = Math.sqrt(sqmag)
 }
 
 object app {
@@ -37,12 +38,14 @@ object app {
         iter += 1
       }
 
-      z.sqmag >= bailoutsq
+      z
     }
+
+    val bailout = 2.0
 
     for (y <- Iterator.range(0, height); x <- Iterator.range(0, width)) {
       val c = Complex((x + xoff) * scale, (y + yoff) * scale)
-      val escaped = mandel(c, 2.0, 5000)
+      val escaped = mandel(c, bailout, 5000).mag >= bailout
       image.setRGB(x, y, if (escaped) 0xffffff else 0x000000)
     }
 
