@@ -23,12 +23,32 @@ object app {
 
   implicit def double2Complex(d : Double) = Complex(d, 0.0)
 
-  val colourists : (String) => (Complex) => Int = {
-    case "escapeBW" => escapeBW _
+  def colourists(name : String) = name.toLowerCase match {
+    case "escapebw" => escapeBW _
+    case "escapevalue" => escapeValue _
+    case "escapetime" => escapeTime _
     case _ => throw new IllegalArgumentException("no such colourist")
   }
 
-  def escapeBW(z : Complex) = if (z.mag >= bailout) 0xffffff else 0x000000
+  case class MandelInfo(escaped : Boolean, value : Complex, iterations : Int)
+
+  def escapeBW(i : MandelInfo) = if (i.escaped) 0xffffff else 0x000000
+
+  def grayscale(shade : Int) = (shade << 16) | (shade << 8) | shade
+
+  def escapeValue(i : MandelInfo) = {
+    if (i.escaped)
+      grayscale(((i.value.mag - bailout) * 128).toInt)
+    else
+      0x000000
+  }
+
+  def escapeTime(i : MandelInfo) = {
+    if (i.escaped)
+      grayscale(i.iterations)
+    else
+      0x000000
+  }
 
   def mandel(c : Complex, bailout : Double, maxiter : Int) = {
     val bailoutsq = bailout * bailout
@@ -40,10 +60,10 @@ object app {
       iter += 1
     }
 
-    z
+    MandelInfo(z.sqmag >= bailoutsq, z, iter)
   }
 
-  def drawMandel(width : Int, height : Int, colourist : (Complex) => Int) = {
+  def drawMandel(width : Int, height : Int, colourist : (MandelInfo) => Int) = {
     val image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB)
 
     // translate the complex plane and scale it to the image dimensions
