@@ -18,6 +18,9 @@ case class Complex(re : Double, im : Double) {
 
 object app {
 
+  val bailout = 2.0
+  val iterations = 1000
+
   implicit def double2Complex(d : Double) = Complex(d, 0.0)
 
   val colourists : (String) => (Complex) => Int = {
@@ -25,7 +28,20 @@ object app {
     case _ => throw new IllegalArgumentException("no such colourist")
   }
 
-  def escapeBW(z : Complex) = if (z.mag >= 2.0) 0xffffff else 0x000000
+  def escapeBW(z : Complex) = if (z.mag >= bailout) 0xffffff else 0x000000
+
+  def mandel(c : Complex, bailout : Double, maxiter : Int) = {
+    val bailoutsq = bailout * bailout
+
+    var z = 0.0 : Complex
+    var iter = 0
+    while (z.sqmag < bailoutsq && iter < maxiter) {
+      z = z.sq + c
+      iter += 1
+    }
+
+    z
+  }
 
   def drawMandel(width : Int, height : Int, colourist : (Complex) => Int) = {
     val image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB)
@@ -35,24 +51,9 @@ object app {
     val scale = (maxRe - minRe) / width.toDouble
     val xoff = - 2 * width / 3; val yoff = - height / 2
 
-    def mandel(c : Complex, bailout : Double, maxiter : Int) = {
-      val bailoutsq = bailout * bailout
-
-      var z = 0.0 : Complex
-      var iter = 0
-      while (z.sqmag < bailoutsq && iter < maxiter) {
-        z = z.sq + c
-        iter += 1
-      }
-
-      z
-    }
-
-    val bailout = 2.0
-
     for (y <- Iterator.range(0, height); x <- Iterator.range(0, width)) {
       val c = Complex((x + xoff) * scale, (y + yoff) * scale)
-      val escape = mandel(c, bailout, 5000)
+      val escape = mandel(c, bailout, iterations)
       image.setRGB(x, y, colourist(escape))
     }
 
